@@ -43,6 +43,10 @@ if metanumb > 5:
     arcpy.AddError("More than 5 meta iterations not supported")
     sys.exit()
 
+if metanumb == 1:
+    arcpy.AddError("Less than 2 meta iterations not supported")
+    sys.exit()
+
 if iterations < 5 or iterations > 10:
     arcpy.AddWarning("Number of iterations is outside of recommended range of 5 to 10")
 ###############################################################################
@@ -55,9 +59,12 @@ deletefeatures = []
 
 #copy the points layer and seed layer to a scratch file
 points_copy = arcpy.CopyFeatures_management(points, workspace + "\\" + "points_copy")
-seed_copy = arcpy.CopyFeatures_management(seed, workspace + "\\" + "seed_copy")
 deletefeatures.append(points_copy)
-deletefeatures.append(seed_copy)
+if seed != "":
+    seed_copy = arcpy.CopyFeatures_management(seed, workspace + "\\" + "seed_copy")
+    deletefeatures.append(seed_copy)
+
+
 
 def metaanalysis(checkbox):
     if checkbox == 'false': #no metaiterations
@@ -156,7 +163,7 @@ def metaanalysis(checkbox):
                     if iter == 0:
                         arcpy.AddMessage("Performing iteration #" + str(iter + 1) + " for Meta-Iteration " + str(metaan + 1))
                         nearmeta = arcpy.Near_analysis(pointlayermeta, seedxmeta, "", "", "", near_method)
-                        meanmeta = arcpy.MeanCenter_stats(pointlayermeta, pathmeta + "\\" + "meancenter_meta" + str(metaan + 1) + "_" + str(iter + 1), weightmeta, 'NEAR_FID', '')
+                        meanmeta = arcpy.MeanCenter_stats(pointlayermeta, pathmeta + "\\" + "meancenter_meta" + str(metaan + 1) + "_iteration_" + str(iter + 1), weightmeta, 'NEAR_FID', '')
                         arcpy.AddField_management(meanmeta, "Iteration", 'TEXT')
                         arcpy.AddField_management(meanmeta, "MetaIT", 'TEXT')
                         arcpy.CalculateField_management(meanmeta, 'ITERATION', str(iter + 1))
@@ -175,7 +182,7 @@ def metaanalysis(checkbox):
                     elif iter >= 1:
                         arcpy.AddMessage("Performing iteration #" + str(iter + 1) + " for Meta-Iteration " + str(metaan + 1))
                         nearxmeta = arcpy.Near_analysis(pointlayermeta, iterlistmeta[-1], "", "", "", near_method)
-                        meanxmeta = arcpy.MeanCenter_stats(pointlayermeta, pathmeta + "\\" + "meancenter_meta" + str(metaan + 1) + "_" + str(iter + 1), weightmeta, 'NEAR_FID', '')
+                        meanxmeta = arcpy.MeanCenter_stats(pointlayermeta, pathmeta + "\\" + "meancenter_meta" + str(metaan + 1) + "_iteration_" + str(iter + 1), weightmeta, 'NEAR_FID', '')
                         arcpy.AddField_management(meanxmeta, "Iteration", 'TEXT')
                         arcpy.AddField_management(meanxmeta, "MetaIT", 'TEXT')
                         arcpy.CalculateField_management(meanxmeta, 'ITERATION', str(iter + 1))
@@ -209,7 +216,7 @@ def metaanalysis(checkbox):
         bestdict = min(mindict.keys(), key = (lambda k: mindict[k]))
 
         arcpy.AddMessage("The lowest average distance was achieved using meta-iteration "
-          + str(bestdict) + " and the mean distance is " + str(mindict[bestdict]))
+          + str(bestdict) + " and the mean distance is " + str(int(mindict[bestdict])))
         if bestdict == 1:
             op = arcpy.CopyFeatures_management(metamasterlist[4], output)
         elif bestdict == 2:
