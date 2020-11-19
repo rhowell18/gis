@@ -1,0 +1,796 @@
+#Big messy code going through lots of snotel rasters and extractive values to locations of snotel points. 
+#probably too messy to use but can probably scrap some useful code somewhere in here
+
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+
+input = 'snotel_clean'#point file
+input_fl = arcpy.MakeFeatureLayer_management(input, "input_fl")
+fname = 'precip_sSeason'#example, tmean_dayof
+space = "MaxTemp\\tmax_winter2018.gdb\\" #geodatabase holding the rasters. Make sure to change the env workspace below
+#space2 = "Precip\\Precip_winter2018.gdb\\"
+sumdatabase = r"H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\MaxTemp\\tmax_mean_season.gdb\\"#path of sum or average database
+work = 'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\Precip\\tmean_mean_season.gdb\\'
+#Iterate through to extract values to points based on date
+
+arcpy.env.workspace = r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space
+rl = arcpy.ListRasters()
+#rl.sort(key=lambda string: string[12:])#sorts by julian date
+rl.sort(key=lambda string: string[-5:])
+#####
+dict = {}
+l = -14
+n = -13
+m = -12
+p = -11
+q = -10
+r = -9
+s = -8
+t = -7
+u = -6
+v = -5
+w = -4
+x = -3
+y = -2
+z = -1
+for item in rl:
+    print(item)
+    print("z =" + str(z))
+    if rl.index(item) < 29:
+        print("october")
+        l += 1
+        n += 1
+        m += 1
+        p += 1
+        q += 1
+        r += 1
+        s += 1
+        t += 1
+        u += 1
+        v += 1
+        w += 1
+        x += 1
+        y += 1
+        z += 1
+    else:
+        jdate = item[-5:-1] + item[-1]
+        celllist = []
+        print(str(jdate) + "+" + str(rl[x]) + "+" + str(rl[y]) + "+" + str(rl[z]))
+        raster1 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[y])
+        celllist.append(raster1)
+        print(raster1)
+        raster2 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[x])
+        celllist.append(raster2)
+        print(raster2)
+        raster3 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[z])
+        celllist.append(raster3)
+        print(raster3)
+        raster4 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[w])
+        celllist.append(raster4)
+        print(raster4)
+        raster5 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[v])
+        celllist.append(raster5)
+        print(raster5)
+        raster6 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[u])
+        celllist.append(raster6)
+        print(raster6)
+        raster7 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[t])
+        celllist.append(raster7)
+        print(raster7)
+        raster8 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[s])
+        celllist.append(raster8)
+        print(raster8)
+        raster9 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[r])
+        celllist.append(raster9)
+        print(raster9)
+        raster10 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[q])
+        celllist.append(raster10)
+        print(raster10)
+        raster11 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[p])
+        celllist.append(raster11)
+        print(raster11)
+        raster12 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[m])
+        celllist.append(raster12)
+        print(raster12)
+        raster13 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[n])
+        celllist.append(raster13)
+        print(raster13)
+        raster14 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[l])
+        celllist.append(raster14)
+        print(raster14)
+
+        #output_raster = (raster1 + raster2 + raster3 + raster4 + raster5 + raster6 + raster7 + raster8 + raster9 + raster10 + raster11 + raster12 + raster13 + raster14)/14
+        output_raster = arcpy.sa.CellStatistics(celllist, 'SUM')
+        output_raster.save(sumdatabase + 'precip_sum_3_' + item)
+        l += 1
+        n += 1
+        m += 1
+        p += 1
+        q += 1
+        r += 1
+        s += 1
+        t += 1
+        u += 1
+        v += 1
+        w += 1
+        x += 1
+        y += 1
+        z += 1
+########################################################################################
+#go through and add up for sum of the season
+arcpy.env.workspace = r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space
+work = r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space
+rl = arcpy.ListRasters()
+rl.sort(key=lambda string: string[12:])#sorts by julian date
+sumlist = []
+
+for raster in rl:
+    j = str(int(raster[-5:-1] + raster[-1]) + 1)
+    print(j)
+    sumlist.append(work + raster)
+    print(sumlist)
+    sumras = arcpy.sa.CellStatistics(sumlist, "MEAN")
+    print('sumras set')
+    #sumras.save(arcpy.env.workspace + "sum_season_" + j )
+    arcpy.CopyRaster_management(sumras, work + "tmax_season_" + j)
+    print('sumras saved')
+###########################################################################################
+#add values to input table
+arcpy.env.workspace = r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space
+fl = arcpy.ListRasters()
+dict = {}
+for feature in fl:
+    j = feature[-5:]
+    print(str(j))
+    with arcpy.da.SearchCursor(input, ["julian", "OBJECTID"]) as cursor:
+        for row in cursor:
+            counter = 1
+            if row[0] == int(j):
+                query = "OBJECTID = " + str(row[1])
+                selection = arcpy.SelectLayerByAttribute_management('input_fl', "NEW_SELECTION", query)
+                #print(arcpy.GetCount_management(selection))
+                #print(query)
+
+                print("is equal" + str(row[0]))
+
+                table = arcpy.sa.ExtractValuesToPoints(selection, r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space + feature, r"H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\" + space + "\\temptable_" + feature)
+
+                with arcpy.da.SearchCursor(table, ['OBJECTID', 'RASTERVALU']) as cursor2:
+                    for row2 in cursor2:
+                        OID = row2[0]
+                        value = row2[1]
+                        dict.update({OID : value})
+                arcpy.Delete_management(table)
+                #arcpy.sa.ExtractMultiValuesToPoints(input, [feature, att + "dayof"])
+                #this extract values to points is reading att + dayof as a second input
+            else:
+                print('not equal' + str(row[0]))
+print(dict)
+with arcpy.da.UpdateCursor(input, ['ID', fname]) as cursor:
+    for row in cursor:
+        if row[0] in dict:
+            print(row[0])
+            row[1] = dict[row[0]]
+            cursor.updateRow(row)
+        else:
+            print("Not in dict")
+arcpy.Delete_management(input_fl)
+##############################################################################################################
+#This code goes through a folder into subfolders of PRISM files, picks out the rasters, and saves them to a gdb
+#with julian date in the name. It all works beautifully
+###############WORKS##########################################################################
+#this is from https://gis.stackexchange.com/questions/198197/extract-by-mask-with-multiple-shapefiles-and-multiple-rasters
+#it gets a list of only the rasters not the ancillary files
+import arcpy, jdcal, os
+from arcpy import env
+from arcpy.sa import *
+from jdcal import gcal2jd, jd2gcal
+
+att = 'tmean_'#attribute (precip, tmax, tmean, etc.)
+folder = 'MeanTemp'#folder with rasters
+gdbname = #name of the geodatabase to save clipped rasters to
+
+folderlist = ['Feb2019', 'Jan2019', 'Nov2018', 'Oct2018', 'Dec2018']
+#yearlist = ['2009', '2008', '2007', '2006', '2005', '2004', '2003', '2002', '2001', '2000', '1999', '1998']
+for folderiter in folderlist:
+    print(folderiter)
+    arcpy.CheckOutExtension('Spatial')
+    arcpy.env.workspace= 'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + folder + '\\' + folderiter
+    print(arcpy.env.workspace)
+    rasters = [os.path.join(arcpy.env.workspace, i) for i in arcpy.ListRasters('*.bil')]
+    ###
+    #extracts the folder and saves to a geodatabase
+    mask = r'H:\School\GIS\Thesis_RSF\SnowDepth\SnowDepth.gdb\snowmodelarea'
+    extlist = []
+    for raster in rasters:
+        #print("entered raster loop")
+        #print(raster[-12:-10]) iterates through fine
+        day = raster[-10:-8] #date
+        mon = raster[-12:-10] #month
+        year = raster[-16:-12] #year
+
+        julian = gcal2jd(year,mon,day)
+        j2 = int(julian[-1])
+        print("extracting " + str(raster))
+        outputras = r"C:\\Users\\rhowell2\\Desktop\\prismtemp\\snotel_test\\"
+        out = arcpy.sa.ExtractByMask(raster, mask)
+        #print('out executed')
+        name = att + str(mon) + '_' + str(day) + '_' + str(year) + '_' + str(j2) + '.tif'
+        #print('name assigned')
+        out.save(outputras + name)
+        #print('out saved')
+        extlist.append(outputras + name)
+        #print(extlist)
+    print("exporting to geodatabase")
+    outdatabase = r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\MeanTemp\\' + gdbname
+    arcpy.RasterToGeodatabase_conversion(extlist, outdatabase)
+###################################################################################################
+####################################################################################################
+
+#Extra stuff####################################################################
+#################################################################################
+##################################################################################
+#extract multi values to points example
+arcpy.sa.ExtractMultiValuesToPoints("Snotel_27", ["PRISM_ppt_stable_4kmD2_20181201_bil.bil", "testextract"], "NONE")
+
+prism[-4:-1] + prism[-1] #returns '.bil', so can use to filer out the right files in the folder
+
+day = prism[-10:-8] #returns date as string
+mon = prism[-12:-10] #returns month as string
+year = prism[-16:-12] #returns year as string
+
+#sample istead of extract values to points
+temp = r"H:\School\GIS\Thesis_RSF\SnowDepth\SnowDepth.gdb\Sample_tmean_temp" #where to temp save
+table = arcpy.sa.Sample(r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\MeanTemp\\tmean_winter2018.gdb\\' + feature, input, temp, "NEAREST", "OBJECTID", "CURRENT_SLICE")
+#with arcpy.da.SearchCursor(table, [input, str(feature + '_Band_1')]) as cursor2:
+
+#this works, just stashing it in case I break something
+    arcpy.env.workspace = r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space
+    fl = arcpy.ListRasters()
+    dict = {}
+    for feature in fl:
+        j = feature[-5:-1] + feature[-1]
+        print(str(j))
+        with arcpy.da.SearchCursor(input, ["julian", "OBJECTID"]) as cursor:
+            for row in cursor:
+                counter = 1
+                if row[0] == int(j):
+                    query = "OBJECTID = " + str(row[1])
+                    selection = arcpy.SelectLayerByAttribute_management('input_fl', "NEW_SELECTION", query)
+                    #print(arcpy.GetCount_management(selection))
+                    #print(query)
+
+                    print("is equal" + str(row[0]))
+
+                    table = arcpy.sa.ExtractValuesToPoints(selection, r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space + feature, r"H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\SnowDepth.gdb\\" + feature + "_testtable")
+
+                    with arcpy.da.SearchCursor(table, ['ID', 'RASTERVALU']) as cursor2:
+                        for row2 in cursor2:
+                            OID = row2[0]
+                            value = row2[1]
+                            dict.update({OID : value})
+                    arcpy.Delete_management(table)
+                    #arcpy.sa.ExtractMultiValuesToPoints(input, [feature, att + "dayof"])
+                    #this extract values to points is reading att + dayof as a second input
+                else:
+                    print('not equal' + str(row[0]))
+    print(dict)
+    with arcpy.da.UpdateCursor(input, ['ID', fname]) as cursor:
+        for row in cursor:
+            row[1] = dict[row[0]]
+            cursor.updateRow(row)
+    arcpy.Delete_management(input_fl)
+    ###########################################################
+    #renames junk at the end of the name within a geodatabase
+arcpy.env.workspace = r'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\PRISM\\' + space
+rl = arcpy.ListRasters()
+for item in rl:
+    arcpy.Rename_management(item, item[:17])
+#
+
+#####
+rl = [k[:-2] for k in rl] #removes the _0 at the end, I think this is only on the precip data
+
+
+
+
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+
+
+space = "Precip_clipped.gdb\\" #geodatabase holding the rasters. Make sure to change the env workspace below
+#space2 = "Precip\\Precip_winter2018.gdb\\"
+sumdatabase = r"H:\\School\\GIS\PRISM\\PointPrep\\FinalData\\precip_7.gdb\\"#path of sum or average database
+work = r'H:\\School\\GIS\PRISM\\PointPrep\\ClippedData\\' + space
+#Iterate through to extract values to points based on date
+
+arcpy.env.workspace = r'H:\\School\\GIS\PRISM\\PointPrep\\ClippedData\\' + space
+rl = arcpy.ListRasters()
+#rl.sort(key=lambda string: string[12:])#sorts by julian date
+rl.sort(key=lambda string: string[-5:])
+#####
+dict = {}
+l = -14
+n = -13
+m = -12
+p = -11
+q = -10
+r = -9
+s = -8
+t = -7
+u = -6
+v = -5
+w = -4
+x = -3
+y = -2
+z = -1
+for item in rl:
+    if item[7:12] == '10_01':
+        dict = {}
+    else:
+        print(item)
+        print("z =" + str(z))
+        if rl.index(item) < 29:
+            print("october")
+            l += 1
+            n += 1
+            m += 1
+            p += 1
+            q += 1
+            r += 1
+            s += 1
+            t += 1
+            u += 1
+            v += 1
+            w += 1
+            x += 1
+            y += 1
+            z += 1
+        else:
+            jdate = item[-5:]
+            celllist = []
+            print(str(jdate) + "+" + str(rl[x]) + "+" + str(rl[y]) + "+" + str(rl[z]))
+            raster1 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[y])
+            celllist.append(raster1)
+            print(raster1)
+            raster2 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[x])
+            celllist.append(raster2)
+            print(raster2)
+            raster3 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[z])
+            celllist.append(raster3)
+            print(raster3)
+            raster4 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[w])
+            celllist.append(raster4)
+            print(raster4)
+            raster5 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[v])
+            celllist.append(raster5)
+            print(raster5)
+            raster6 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[u])
+            celllist.append(raster6)
+            print(raster6)
+            raster7 = arcpy.Raster(arcpy.env.workspace + "\\" + rl[t])
+            celllist.append(raster7)
+            print(raster7)
+
+            #output_raster = (raster1 + raster2 + raster3 + raster4 + raster5 + raster6 + raster7)/7
+            output_raster = arcpy.sa.CellStatistics(celllist, 'SUM')
+            print(sumdatabase + 'precip_sum_7_' + item )
+            output_raster.save(sumdatabase + 'precip_sum_7_' + jdate)
+            print(sumdatabase + 'precip_sum_7_' + jdate + ' saved')
+            l += 1
+            n += 1
+            m += 1
+            p += 1
+            q += 1
+            r += 1
+            s += 1
+            t += 1
+            u += 1
+            v += 1
+            w += 1
+            x += 1
+            y += 1
+            z += 1
+
+######################################################################################################################
+#copy to go through and apply to the actual data I'm going to use, not just the snotel model
+###############################################################################################################
+space = "Precip_clipped.gdb\\" #geodatabase holding the rasters. Make sure to change the env workspace below
+#space2 = "Precip\\Precip_winter2018.gdb\\"
+sumdatabase = r"H:\\School\\GIS\PRISM\\PointPrep\\FinalData\\precip_season.gdb\\"#path of sum or average database
+work = r'H:\\School\\GIS\PRISM\\PointPrep\\ClippedData\\' + space
+#Iterate through to extract values to points based on date
+
+arcpy.env.workspace = r'H:\\School\\GIS\PRISM\\PointPrep\\ClippedData\\' + space
+rl = arcpy.ListRasters()
+#rl.sort(key=lambda string: string[12:])#sorts by julian date
+rl.sort(key=lambda string: string[-5:])
+#####
+sumlist = []
+for raster in rl14:
+    if raster[7:12] == '10_01':
+        sumlist = []
+    elif raster[7:10] == '10_':
+        print('October ' + raster)
+    else:
+        j = str(int(raster[-5:-1] + raster[-1]) + 1)
+        print(j)
+        sumlist.append(work + raster)
+        print(sumlist)
+        sumras = arcpy.sa.CellStatistics(sumlist, "SUM")
+        print('sumras set')
+        arcpy.CopyRaster_management(sumras, sumdatabase + "precip_season_" + j)
+        print('sumras saved')
+
+
+######################################################################################################################
+space = "MaxTemp_clipped.gdb\\" #geodatabase holding the rasters. Make sure to change the env workspace below
+sumdatabase = r"H:\\School\\GIS\PRISM\\PointPrep\\FinalData\\tmax_season.gdb\\"#path of sum or average database
+work = r'H:\\School\\GIS\PRISM\\PointPrep\\ClippedData\\' + space
+#Iterate through to extract values to points based on date
+
+arcpy.env.workspace = r'H:\\School\\GIS\PRISM\\PointPrep\\ClippedData\\' + space
+rl = arcpy.ListRasters()
+#rl.sort(key=lambda string: string[12:])#sorts by julian date
+rl.sort(key=lambda string: string[5:10])
+#####
+sumlist = []
+for raster in rl:
+    if raster[-10:-5] == '10_01':
+        sumlist = []
+    elif raster[-10:-7] == '10_':
+        print('October ' + raster)
+    else:
+        j = str(int(raster[5:10]) + 1)
+        print(j)
+        sumlist.append(work + raster)
+        print(sumlist)
+        sumras = arcpy.sa.CellStatistics(sumlist, "MEAN")
+        print('sumras set')
+        arcpy.CopyRaster_management(sumras, sumdatabase + "tmax_season_" + j)
+        print('sumras saved')
+#################################################################################################
+##################################################################################################
+#####################################################################################################
+##################################################################################################
+#assigns all of the corresponding rasters to points
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+import smtplib
+text = 'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\precip_seasondict_2.txt'
+input = r"H:\\School\\GIS\\Thesis_RSF\\Thesis_RSF.gdb\\winter_merge"
+input_fl = arcpy.MakeFeatureLayer_management(input, "input_fl")
+fname = 'precip_season'
+#arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_season.gdb"
+arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_season.gdb\\"
+fl = arcpy.ListRasters()
+fl2 = fl[977:]
+dict = {}
+for feature in fl2:
+    j = feature[-5:]
+    print(str(j))
+    with arcpy.da.SearchCursor(input, ["julian", "OBJECTID"]) as cursor:
+        for row in cursor:
+            counter = 1
+            if row[0] == int(j):
+                print(dict)
+                query = "OBJECTID = " + str(row[1])
+                selection = arcpy.SelectLayerByAttribute_management('input_fl', "NEW_SELECTION", query)
+                #print(arcpy.GetCount_management(selection))
+                #print(query)
+
+                print("is equal" + str(row[0]))
+
+                table = arcpy.sa.ExtractValuesToPoints(selection, "H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\Precip_season.gdb\\" + feature, r'H:\\School\\GIS\\PRISM\\Test\\test.gdb\\' + "\\temptable_" + feature)
+
+                with arcpy.da.SearchCursor(table, ['number', 'RASTERVALU']) as cursor2:
+                    for row2 in cursor2:
+                        OID = row2[0]
+                        value = row2[1]
+                        dict.update({OID : value})
+                arcpy.Delete_management(table)
+                #arcpy.sa.ExtractMultiValuesToPoints(input, [feature, att + "dayof"])
+                #this extract values to points is reading att + dayof as a second input
+                with open(text, 'w') as f:
+                    print(dict, file=f)
+            else:
+                print('not equal' + str(row[0]))
+######################################################
+#Email
+sender = "Private Person <from@smtp.mailtrap.io>"
+receiver = "A Test User <to@smtp.mailtrap.io>"
+
+message = f"""\
+Subject: Hi Mailtrap
+To: {receiver}
+From: {sender}
+
+Precip_season_1 is done making the dictionary."""
+
+with smtplib.SMTP("smtp.mailtrap.io", 2525) as server:
+    server.login("fea49484c0fd84", "d4cc05dec1ff6a")
+    server.sendmail(sender, receiver, message)
+##################################################
+print(dict)
+with arcpy.da.UpdateCursor(input, ['number', fname]) as cursor:
+    for row in cursor:
+        if row[0] in dict:
+            print(row[0])
+            row[1] = dict[row[0]]
+            cursor.updateRow(row)
+        else:
+            print("Not in dict")
+arcpy.Delete_management(input_fl)
+######################################################
+#Email
+sender = "Private Person <from@smtp.mailtrap.io>"
+receiver = "A Test User <to@smtp.mailtrap.io>"
+
+message = f"""\
+Subject: Hi Mailtrap
+To: {receiver}
+From: {sender}
+
+Precip_season_1 is done processing."""
+
+with smtplib.SMTP("smtp.mailtrap.io", 2525) as server:
+    server.login("fea49484c0fd84", "d4cc05dec1ff6a")
+    server.sendmail(sender, receiver, message)
+    ##################################################################################################
+    #####################################################################################################
+text = 'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\precip_7dict.txt'
+input = r"H:\\School\\GIS\\Thesis_RSF\\Thesis_RSF.gdb\\winter_merge"
+input_fl = arcpy.MakeFeatureLayer_management(input, "input_fl")
+fname = 'precip_7'
+#arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_season.gdb"
+arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_7.gdb\\"
+fl = arcpy.ListRasters()
+fl2 = fl[:977]
+dict = {}
+for feature in fl2:
+    j = feature[-5:]
+    print(str(j))
+    with arcpy.da.SearchCursor(input, ["julian", "OBJECTID"]) as cursor:
+        for row in cursor:
+            counter = 1
+            if row[0] == int(j):
+                print(dict)
+                query = "OBJECTID = " + str(row[1])
+                selection = arcpy.SelectLayerByAttribute_management('input_fl', "NEW_SELECTION", query)
+                #print(arcpy.GetCount_management(selection))
+                #print(query)
+
+                print("is equal" + str(row[0]))
+
+                table = arcpy.sa.ExtractValuesToPoints(selection, "H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_7.gdb\\" + feature, r'H:\\School\\GIS\\PRISM\\Test\\test.gdb\\' + "\\temptable_" + feature)
+
+                with arcpy.da.SearchCursor(table, ['number', 'RASTERVALU']) as cursor2:
+                    for row2 in cursor2:
+                        OID = row2[0]
+                        value = row2[1]
+                        dict.update({OID : value})
+                arcpy.Delete_management(table)
+                #arcpy.sa.ExtractMultiValuesToPoints(input, [feature, att + "dayof"])
+                #this extract values to points is reading att + dayof as a second input
+                with open(text, 'w') as f:
+                    print(dict, file=f)
+            else:
+                print('not equal' + str(row[0]))
+######################################################
+#Email
+sender = "Private Person <from@smtp.mailtrap.io>"
+receiver = "A Test User <to@smtp.mailtrap.io>"
+
+message = f"""\
+Subject: Hi Mailtrap
+To: {receiver}
+From: {sender}
+
+Precip_7 is done making the dictionary."""
+
+with smtplib.SMTP("smtp.mailtrap.io", 2525) as server:
+    server.login("fea49484c0fd84", "d4cc05dec1ff6a")
+    server.sendmail(sender, receiver, message)
+##################################################
+print(dict)
+with arcpy.da.UpdateCursor(input, ['number', fname]) as cursor:
+    for row in cursor:
+        if row[0] in dict:
+            print(row[0])
+            row[1] = dict[row[0]]
+            cursor.updateRow(row)
+        else:
+            print("Not in dict")
+arcpy.Delete_management(input_fl)
+######################################################
+#Email
+sender = "Private Person <from@smtp.mailtrap.io>"
+receiver = "A Test User <to@smtp.mailtrap.io>"
+
+message = f"""\
+Subject: Hi Mailtrap
+To: {receiver}
+From: {sender}
+
+Precip_7 is done processing."""
+
+with smtplib.SMTP("smtp.mailtrap.io", 2525) as server:
+    server.login("fea49484c0fd84", "d4cc05dec1ff6a")
+    server.sendmail(sender, receiver, message)
+    ############################################################################################################
+    ##############################################################################################################
+text = 'H:\\School\\GIS\\Thesis_RSF\\SnowDepth\\precip_7dict_2.txt'
+input = r"H:\\School\\GIS\\Thesis_RSF\\Thesis_RSF.gdb\\winter_merge"
+input_fl = arcpy.MakeFeatureLayer_management(input, "input_fl")
+fname = 'precip_7'
+#arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_season.gdb"
+arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_7.gdb\\"
+fl = arcpy.ListRasters()
+fl2 = fl[977:]
+dict = {}
+for feature in fl:
+    j = feature[-5:]
+    print(str(j))
+    with arcpy.da.SearchCursor(input, ["julian", "OBJECTID"]) as cursor:
+        for row in cursor:
+            counter = 1
+            if row[0] == int(j):
+                print(dict)
+                query = "OBJECTID = " + str(row[1])
+                selection = arcpy.SelectLayerByAttribute_management('input_fl', "NEW_SELECTION", query)
+                #print(arcpy.GetCount_management(selection))
+                #print(query)
+
+                print("is equal" + str(row[0]))
+
+                table = arcpy.sa.ExtractValuesToPoints(selection, "H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_7.gdb\\" + feature, r'H:\\School\\GIS\\PRISM\\Test\\test.gdb\\' + "\\temptable_" + feature)
+
+                with arcpy.da.SearchCursor(table, ['number', 'RASTERVALU']) as cursor2:
+                    for row2 in cursor2:
+                        OID = row2[0]
+                        value = row2[1]
+                        dict.update({OID : value})
+                arcpy.Delete_management(table)
+                #arcpy.sa.ExtractMultiValuesToPoints(input, [feature, att + "dayof"])
+                #this extract values to points is reading att + dayof as a second input
+                with open(text, 'w') as f:
+                    print(dict, file=f)
+            else:
+                print('not equal' + str(row[0]))
+######################################################
+#Email
+sender = "Private Person <from@smtp.mailtrap.io>"
+receiver = "A Test User <to@smtp.mailtrap.io>"
+
+message = f"""\
+Subject: Hi Mailtrap
+To: {receiver}
+From: {sender}
+
+Precip_7_2 is done making the dictionary."""
+
+with smtplib.SMTP("smtp.mailtrap.io", 2525) as server:
+    server.login("fea49484c0fd84", "d4cc05dec1ff6a")
+    server.sendmail(sender, receiver, message)
+##################################################
+print(dict)
+with arcpy.da.UpdateCursor(input, ['number', fname]) as cursor:
+    for row in cursor:
+        if row[0] in dict:
+            print(row[0])
+            row[1] = dict[row[0]]
+            cursor.updateRow(row)
+        else:
+            print("Not in dict")
+arcpy.Delete_management(input_fl)
+######################################################
+#Email
+sender = "Private Person <from@smtp.mailtrap.io>"
+receiver = "A Test User <to@smtp.mailtrap.io>"
+
+message = f"""\
+Subject: Hi Mailtrap
+To: {receiver}
+From: {sender}
+
+Precip_7_2 is done processing."""
+
+with smtplib.SMTP("smtp.mailtrap.io", 2525) as server:
+    server.login("fea49484c0fd84", "d4cc05dec1ff6a")
+    server.sendmail(sender, receiver, message)
+
+#####TEMP#######
+###############
+print('calculating field1')
+arcpy.management.CalculateField("studyarea_point_Clip", "GPS_tpi100", "!GPS1! * !tpi_100_!", "PYTHON3", None)
+print('calculating field2')
+arcpy.management.CalculateField("studyarea_point_Clip", "GPS_slope", "!GPS1! * !slope!", "PYTHON3", None)
+###############
+    ################################################################################################
+########################################################################################
+input_fl = arcpy.MakeFeatureLayer_management(input, "input_fl")
+fname = 'precip_7'
+arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_7.gdb"
+fl = arcpy.ListRasters()
+dict = {}
+for feature in fl:
+    j = feature[-5:]
+    print(str(j))
+    with arcpy.da.SearchCursor(input, ["julian", "OBJECTID"]) as cursor:
+        for row in cursor:
+            counter = 1
+            if row[0] == int(j):
+                query = "OBJECTID = " + str(row[1])
+                selection = arcpy.SelectLayerByAttribute_management('input_fl', "NEW_SELECTION", query)
+                #print(arcpy.GetCount_management(selection))
+                #print(query)
+
+                print("is equal" + str(row[0]))
+
+                table = arcpy.sa.ExtractValuesToPoints(selection, "H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\precip_7.gdb\\" + feature, r'H:\\School\\GIS\\PRISM\\Test\\test.gdb\\' + "\\temptable_" + feature)
+
+                with arcpy.da.SearchCursor(table, ['OBJECTID', 'RASTERVALU']) as cursor2:
+                    for row2 in cursor2:
+                        OID = row2[0]
+                        value = row2[1]
+                        dict.update({OID : value})
+                arcpy.Delete_management(table)
+                #arcpy.sa.ExtractMultiValuesToPoints(input, [feature, att + "dayof"])
+                #this extract values to points is reading att + dayof as a second input
+            else:
+                print('not equal' + str(row[0]))
+print(dict)
+with arcpy.da.UpdateCursor(input, ['ID', fname]) as cursor:
+    for row in cursor:
+        if row[0] in dict:
+            print(row[0])
+            row[1] = dict[row[0]]
+            cursor.updateRow(row)
+        else:
+            print("Not in dict")
+arcpy.Delete_management(input_fl)
+########################################################################################
+input_fl = arcpy.MakeFeatureLayer_management(input, "input_fl")
+fname = 'tmax_season'
+arcpy.env.workspace = r"H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\tmax_season.gdb"
+fl = arcpy.ListRasters()
+dict = {}
+for feature in fl:
+    j = feature[-5:]
+    print(str(j))
+    with arcpy.da.SearchCursor(input, ["julian", "OBJECTID"]) as cursor:
+        for row in cursor:
+            counter = 1
+            if row[0] == int(j):
+                query = "OBJECTID = " + str(row[1])
+                selection = arcpy.SelectLayerByAttribute_management('input_fl', "NEW_SELECTION", query)
+                #print(arcpy.GetCount_management(selection))
+                #print(query)
+
+                print("is equal" + str(row[0]))
+
+                table = arcpy.sa.ExtractValuesToPoints(selection, "H:\\School\\GIS\\PRISM\\PointPrep\\FinalData\\tmax_season.gdb\\" + feature, r'H:\\School\\GIS\\PRISM\\Test\\test.gdb\\' + "\\temptable_" + feature)
+
+                with arcpy.da.SearchCursor(table, ['OBJECTID', 'RASTERVALU']) as cursor2:
+                    for row2 in cursor2:
+                        OID = row2[0]
+                        value = row2[1]
+                        dict.update({OID : value})
+                arcpy.Delete_management(table)
+                #arcpy.sa.ExtractMultiValuesToPoints(input, [feature, att + "dayof"])
+                #this extract values to points is reading att + dayof as a second input
+            else:
+                print('not equal' + str(row[0]))
+print(dict)
+with arcpy.da.UpdateCursor(input, ['ID', fname]) as cursor:
+    for row in cursor:
+        if row[0] in dict:
+            print(row[0])
+            row[1] = dict[row[0]]
+            cursor.updateRow(row)
+        else:
+            print("Not in dict")
+arcpy.Delete_management(input_fl)
