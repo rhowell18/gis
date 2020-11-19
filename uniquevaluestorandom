@@ -1,0 +1,20 @@
+#get list of unique values from one field
+#random assign one field a value from the list
+import random
+
+good = "C40512" #feature class with the field you want to populate the list with
+new = "C40512_random" #feature class with the field that you want to populate with a random value from the list
+field = "WeekOfYear" #name of the field. In this case it is the same for both good and new
+list = []
+
+#populate list
+with arcpy.da.SearchCursor(good, field) as cursor:
+    for row in cursor:
+        if not row[0] in list:
+            list.append(row[0])
+
+#randomly select for new field
+with arcpy.da.UpdateCursor(new, field) as cursor:
+    for row in cursor:
+        row[0] = random.choice(list)
+        cursor.updateRow(row)
