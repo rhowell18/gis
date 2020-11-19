@@ -1,0 +1,61 @@
+#determines number of occurances of each unique value (in this case collar ID number) and creates random points within
+#minimum bounding polygon to perform third order habitat selection
+
+#in this case, point file with unique collar ID's field (deer and bighorn) on antelope island
+
+import arcpy
+
+field = 'Collar'
+points = 'AI_shedPoints'
+#mcpolyOut = 'MCP_individuals'
+
+#test stuff
+database = "D:\\School\\GIS\\Bates_AntelopeIsland\\ThirdOrder_ShedOnly.gdb\\"
+
+#create minimum bounding geometry
+mcpolyOut = database + "mcPolyToolTest"
+mcpoly = arcpy.management.MinimumBoundingGeometry(points, mcpolyOut, "CONVEX_HULL", "LIST", field, "NO_MBG_FIELDS")
+
+#count total number of each individual collar
+summaryOut = database + "summaryToolTest"
+arcpy.analysis.Statistics(points, summaryOut, field + " COUNT", field)
+
+#create dictionary of counts of values
+countDict = {}
+
+with arcpy.da.SearchCursor(summaryOut, [field, 'FREQUENCY']) as cursor:
+    for row in cursor:
+        print(row[0])
+        countDict[row[0]] = row[1]
+
+# generate random points according to the number of use points by collar
+# populates field with collar ID
+list = []
+minDist = '10 meters' #minimum distance between random points
+poly_fl = arcpy.MakeFeatureLayer_management(mcpolyOut, "mcPoly") #was inside loop, if issues put back
+with arcpy.da.SearchCursor(mcpolyOut, [field]) as cursor:
+    for row in cursor:
+        print(row[0] + ": " + str(countDict[row[0]]))
+        #select one collar ID
+        query = field + "=" + "'" + row[0] + "'"
+        selection = arcpy.management.SelectLayerByAttribute(poly_fl, "NEW_SELECTION", query)
+        #create and merge random points
+        print("Creating random points")
+        random = arcpy.management.CreateRandomPoints(database, 'random_' + str(row[0]), selection, "", countDict[row[0]], minDist)
+        list.append(random)
+        arcpy.AddField_management(random, field, "TEXT")
+        #assign collar ID
+        print("assigning collar ID")
+        with arcpy.da.UpdateCursor(random, field) as cursor2:
+            for row2 in cursor2:
+                row2[0] = row[0]
+                cursor2.updateRow(row2)
+
+#merge random points
+arcpy.Merge_management(list, database + "random_merge")
+
+###
+#delete intermediates
+arcpy.Delete_management(poly_fl)
+for item in list:
+    arcpy.Delete_management(item)
