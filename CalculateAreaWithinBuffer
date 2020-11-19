@@ -1,0 +1,65 @@
+#generate buffers and calculate the area of each underlying raster value within the buffer area
+#made this for Mikiah and the horse/sagebrush thing in Nevada
+#formatted for script tool
+
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+
+work = arcpy.GetParameterAsText(0)#'H:\\School\\GIS\\Thesis_RSF\\scratch'#FOLDER
+point = arcpy.GetParameterAsText(1)#'testpoints'
+lekID = arcpy.GetParameterAsText(2)#'OBJECTID'#lekID field
+bufdist = arcpy.GetParameterAsText(3)#50
+bufunit = arcpy.GetParameterAsText(4)#'Meters'#capital M or K in meters, KM
+vegclass = arcpy.GetParameterAsText(5)#'classification'#veg class layer
+classfield = arcpy.GetParameterAsText(6)#'Value' #nominal field of class
+filepath = arcpy.GetParameterAsText(7)#'H:\\School\\GIS\\Thesis_RSF\\scratch\\finaltest'#final product name and path
+
+
+bufflist = []
+extractlist = []
+vectorlist = []
+with arcpy.da.SearchCursor(point, ['OBJECTID', lekID]) as cursor:
+    for row in cursor:
+        pointid = row[0]
+        pid2 = row[1]
+        query = 'OBJECTID = ' + str(pointid)
+        print(query)
+        pselection = arcpy.SelectLayerByAttribute_management(point, "NEW_SELECTION", query)
+        buffer = arcpy.analysis.Buffer(pselection, work + '\\buffer_' + str(row[0]), str(bufdist) + ' ' + bufunit, "FULL", "ROUND", "NONE", None, "PLANAR")
+        print( str(row[0]) + 'buffer done')
+        bufflist.append(buffer)
+
+        #extract by mask
+        extract = arcpy.sa.ExtractByMask(vegclass, buffer)
+        extract.save(work + '\\extract_' + str(row[1]))
+        print(str(row[0]) +'extract by mask done')
+        extractlist.append(extract)
+
+        #convert to vector
+        vec = arcpy.conversion.RasterToPolygon(extract, work + '\\vector_' + str(row[1]), "SIMPLIFY", classfield, "MULTIPLE_OUTER_PART", None)
+        print(str(row[0]) +'converted to vector')
+
+        #calculate area
+        arcpy.management.AddGeometryAttributes(vec, "AREA", "METERS", "SQUARE_METERS")
+        print(str(row[0]) +'added geometry')
+        arcpy.AddField_management(vec, 'Lek_ID', "TEXT")
+
+        #assign ID
+        with arcpy.da.UpdateCursor(vec, ['Lek_ID']) as ucursor:
+            print('entered assign id cursor')
+            for urow in ucursor:
+                print('entered assign id loop')
+                urow[0] = pid2
+                print('row assigned')
+                ucursor.updateRow(urow)
+                print('rowupdated')
+        print(str(row[0]) +'id assigned')
+
+        #append to list
+        vectorlist.append(vec)
+        print(str(row[0]) +'added to list')
+        arcpy.AddMessage(str(pid2) + ' completed')
+#merge vectors
+arcpy.Merge_management(vectorlist, filepath)
+print(str(row[0]) +'merged')
