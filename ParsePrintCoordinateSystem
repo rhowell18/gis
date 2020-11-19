@@ -1,0 +1,8 @@
+#parse folder with tiffs, get coordinate system for each
+arcpy.env.workspace= 'D:\\School\\GIS\\MuleDeerTreatments\\TIFF_PoleCreekFire\\' #folder with a bunch of tiffs
+rasters = [os.path.join(arcpy.env.workspace, i) for i in arcpy.ListRasters('*.tif')]
+
+for item in rasters:
+    print(item)
+    ref = arcpy.Describe(item).spatialReference
+    print(ref.name)
