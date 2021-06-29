@@ -1,0 +1,43 @@
+#Utilizes Extract by Polygon (OUTSIDE) tool in order to erase polygon features from a raster
+#extract by polygon requires you to input points and it's really cumbersome
+#created for the Red Hill tortoise project to remove non-habitat features prior to a classification
+#Created by R Howell, June 2021
+
+import arcpy
+from arcpy import env
+from arcpy.sa import *
+
+inpoly = arcpy.GetParameterAsText(0) #input polygon that you want to clip out (feature class)
+inRaster = arcpy.GetParameterAsText(1) #input raster (raster)
+outRasName = arcpy.GetParameterAsText(2) #output raster with file path if desired (raster)
+
+vtop = arcpy.FeatureVerticesToPoints_management(inpoly, "outpoints", "ALL")
+
+arcpy.management.AddGeometryAttributes(vtop, "POINT_X_Y_Z_M")
+
+polyPoints = ''
+
+with arcpy.da.SearchCursor(vtop, ["POINT_X", "POINT_Y"]) as cursor:
+    for row in cursor:
+        polyPoints += "'" + str(row[0]) + " " + str(row[1]) + "'; "
+
+extPolygonOut = ExtractByPolygon(inRaster, polyPoints, "OUTSIDE")
+extPolygonOut.save(outRasName)
+
+arcpy.delete(vtop)
+
+#################################################################################
+################################################################################
+################################################################################
+#the below can replace the polyPoints string and populate a new points string, works but the
+#above is more efficient
+
+# polyPoints = []
+#
+# with arcpy.da.SearchCursor(vtop, ["POINT_X", "POINT_Y"]) as cursor:
+#     for row in cursor:
+#         polyPoints.append("'" + str(row[0]) + " " + str(row[1]) + "'")
+#
+# points = ''
+# for item in polyPoints:
+#     points += item + "; "
