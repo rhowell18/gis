@@ -1,3 +1,7 @@
+####This is just a test for scheduling a python script to run on a schedule. The script works, just change the file path
+#Use Windows Scheduler
+#https://datatofish.com/python-script-windows-scheduler/
+
 test = 'test'
 a = 'This worked!'
 
